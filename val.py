@@ -219,9 +219,14 @@ def run(
     dt = Profile(device=device), Profile(device=device), Profile(device=device)  # profiling times
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
+
+    # 打印验证时的数据名称
+    LOGGER.info(s)
+    pbar = enumerate(dataloader)
+    
     callbacks.run("on_val_start")
-    pbar = tqdm(dataloader, desc=s, bar_format=TQDM_BAR_FORMAT)  # progress bar
-    for batch_i, (im, targets, paths, shapes) in enumerate(pbar):
+    #pbar = tqdm(dataloader, desc=s, bar_format=TQDM_BAR_FORMAT)  # progress bar
+    for batch_i, (im, targets, paths, shapes) in pbar:
         callbacks.run("on_val_batch_start")
         with dt[0]:
             if cuda:

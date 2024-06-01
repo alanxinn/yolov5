@@ -17,6 +17,7 @@ Tutorial:   https://docs.ultralytics.com/yolov5/tutorials/train_custom_data
 import argparse
 import math
 import os
+os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 import random
 import subprocess
 import sys
@@ -350,8 +351,9 @@ def train(hyp, opt, device, callbacks):
             train_loader.sampler.set_epoch(epoch)
         pbar = enumerate(train_loader)
         LOGGER.info(("\n" + "%11s" * 7) % ("Epoch", "GPU_mem", "box_loss", "obj_loss", "cls_loss", "Instances", "Size"))
-        if RANK in {-1, 0}:
-            pbar = tqdm(pbar, total=nb, bar_format=TQDM_BAR_FORMAT)  # progress bar
+        # 不使用tqdm进度条，直接打印
+        # if RANK in {-1, 0}:
+        #     pbar = tqdm(pbar, total=nb, bar_format=TQDM_BAR_FORMAT)  # progress bar
         optimizer.zero_grad()
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
             callbacks.run("on_train_batch_start")
@@ -404,10 +406,17 @@ def train(hyp, opt, device, callbacks):
             if RANK in {-1, 0}:
                 mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
                 mem = f"{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G"  # (GB)
-                pbar.set_description(
+
+                # 打印训练参数
+                LOGGER.info(
                     ("%11s" * 2 + "%11.4g" * 5)
                     % (f"{epoch}/{epochs - 1}", mem, *mloss, targets.shape[0], imgs.shape[-1])
                 )
+                # 不使用tqdm进度条，直接打印
+                # pbar.set_description(
+                #     ("%11s" * 2 + "%11.4g" * 5)
+                #     % (f"{epoch}/{epochs - 1}", mem, *mloss, targets.shape[0], imgs.shape[-1])
+                # )
                 callbacks.run("on_train_batch_end", model, ni, imgs, targets, paths, list(mloss))
                 if callbacks.stop_training:
                     return
@@ -569,7 +578,8 @@ def main(opt, callbacks=Callbacks()):
     """Runs training or hyperparameter evolution with specified options and optional callbacks."""
     if RANK in {-1, 0}:
         print_args(vars(opt))
-        check_git_status()
+        # 不检查代码是否需要更新
+        #check_git_status()
         check_requirements(ROOT / "requirements.txt")
 
     # Resume (from specified or most recent last.pt)
